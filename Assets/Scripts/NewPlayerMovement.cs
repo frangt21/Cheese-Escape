@@ -53,6 +53,18 @@ else
 	animator.SetBool("enSuelo", false);
 }
     }
+    private void OnTriggerEnter(Collider other)
+{
+    // Si el objeto con el que chocamos tiene el tag "Collectible"...
+    if (other.CompareTag("Collectible"))
+    {
+        // Destruimos el queso.
+        Destroy(other.gameObject);
+
+        // Avisamos al GameManager que hemos recogido uno.
+        GameManager.instance.AddCheese();
+    }
+}
     void OnDrawGizmosSelected()
 {
 	Gizmos.color = Color.blue;

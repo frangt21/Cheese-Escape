@@ -1,21 +1,20 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-public class EnemyController : MonoBehaviour
+public class ShyEnemyController : MonoBehaviour
 {
     [Header("Core Settings")]
     [SerializeField] private Transform player;
-    [SerializeField] private float moveSpeed = 3.5f;
-    [SerializeField] private float detectionRadius = 10f;
-    [SerializeField] private float memoryTime = 3f; // <-- ¡NUEVA VARIABLE! Tiempo que recuerda al jugador.
+    [SerializeField] private float moveSpeed = 4.0f;
+    [SerializeField] private float detectionRadius = 8.0f;
+    [SerializeField] private float memoryTime = 2f; // <-- ¡NUEVA VARIABLE! El tímido tiene menos memoria.
 
     [Header("Patrol Settings")]
-    [SerializeField] private float patrolRadius = 15f;
-    [SerializeField] private float patrolWaitTime = 2f;
+    [SerializeField] private float patrolRadius = 10f;
+    [SerializeField] private float patrolWaitTime = 3f;
 
     // --- NUEVAS VARIABLES DE ESTADO Y TEMPORIZADOR ---
-    private bool isChasing = false; // Para saber si estamos en modo persecución.
-    private float memoryTimer;      // El temporizador de la memoria.
+    private bool isFleeing = false;
+    private float memoryTimer;
 
     private Vector3 startPosition;
     private Vector3 patrolDestination;
@@ -36,30 +35,25 @@ public class EnemyController : MonoBehaviour
         // --- LÓGICA DE DETECCIÓN Y MEMORIA ---
         if (distanceToPlayer < detectionRadius)
         {
-            // Si vemos al jugador, activamos la persecución y reseteamos el temporizador de memoria.
-            isChasing = true;
+            isFleeing = true;
             memoryTimer = memoryTime;
         }
         else
         {
-            // Si no vemos al jugador, pero estábamos persiguiendo (gracias a la memoria)...
-            if (isChasing)
+            if (isFleeing)
             {
-                // Empezamos a contar hacia atrás.
                 memoryTimer -= Time.deltaTime;
                 if (memoryTimer <= 0)
                 {
-                    // Si se acaba el tiempo, olvidamos al jugador y dejamos de perseguir.
-                    isChasing = false;
+                    isFleeing = false;
                 }
             }
         }
 
         // --- LÓGICA DE ACCIÓN BASADA EN EL ESTADO ---
-        // Ahora, la acción depende del estado "isChasing" y no directamente de la distancia.
-        if (isChasing)
+        if (isFleeing)
         {
-            ChasePlayer();
+            Flee();
         }
         else
         {
@@ -67,11 +61,11 @@ public class EnemyController : MonoBehaviour
         }
     }
 
-    private void ChasePlayer()
+    private void Flee()
     {
-        Vector3 direction = (player.position - transform.position).normalized;
-        direction.y = 0;
-        transform.Translate(direction * moveSpeed * Time.deltaTime);
+        Vector3 fleeDirection = (transform.position - player.position).normalized;
+        fleeDirection.y = 0;
+        transform.Translate(fleeDirection * moveSpeed * Time.deltaTime);
     }
 
     private void Patrol()
@@ -89,7 +83,7 @@ public class EnemyController : MonoBehaviour
         {
             Vector3 direction = (patrolDestination - transform.position).normalized;
             direction.y = 0;
-            transform.Translate(direction * (moveSpeed * 0.75f) * Time.deltaTime);
+            transform.Translate(direction * (moveSpeed * 0.5f) * Time.deltaTime);
         }
     }
 
@@ -99,25 +93,12 @@ public class EnemyController : MonoBehaviour
         float randomZ = Random.Range(-patrolRadius, patrolRadius);
         patrolDestination = new Vector3(startPosition.x + randomX, transform.position.y, startPosition.z + randomZ);
     }
-
-    private void OnCollisionEnter(Collision collision)
-{
-    // Si chocamos con el jugador...
-    if (collision.gameObject.CompareTag("Player"))
-    {
-        // Destruimos el objeto del jugador.
-        Destroy(collision.gameObject);
-        
-        // Avisamos al GameManager que hemos perdido.
-        GameManager.instance.LoseGame();
-    }
-}
-
+    
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRadius);
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, patrolRadius);
     }
 }
